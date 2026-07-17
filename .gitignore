@@ -1,0 +1,31 @@
+# Real business data and generated runs
+/data/input/*
+/data/output/*
+/runs/*
+/approvals/*
+*.xlsx
+*.xlsm
+*.xls
+*.xlsb
+
+# Keep directory placeholders if created locally
+!/data/input/.gitkeep
+!/data/output/.gitkeep
+!/runs/.gitkeep
+!/approvals/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
