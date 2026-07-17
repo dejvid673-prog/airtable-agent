@@ -1,0 +1,54 @@
+{
+  "contract_version": "0.1.0",
+  "source_sheet": "EXPORT",
+  "prepared_sheet": "EXPORT_GOTOWY",
+  "required_columns": [
+    "ID produktu",
+    "SKU",
+    "Nazwa produktu",
+    "Kategoria główna",
+    "Podkategoria",
+    "Rozmiar / wariant",
+    "Waga kg",
+    "Cena netto",
+    "Stan",
+    "Aktywny",
+    "EAN"
+  ],
+  "required_value_columns": [
+    "ID produktu",
+    "SKU",
+    "Nazwa produktu",
+    "Kategoria główna",
+    "Podkategoria",
+    "Cena netto",
+    "Stan",
+    "Aktywny"
+  ],
+  "unique_columns": ["ID produktu", "SKU"],
+  "review_duplicate_columns": ["Nazwa produktu", "EAN"],
+  "ean": {
+    "optional": true,
+    "digits": 13
+  },
+  "weight_optional_subcategories": [
+    "Ryby żywe i ozdobne",
+    "Rośliny wodne",
+    "Ślimaki i małże"
+  ],
+  "automatic_data_changes": [
+    "trim_outer_whitespace",
+    "collapse_repeated_whitespace"
+  ],
+  "forbidden_automatic_changes": [
+    "delete_record",
+    "merge_record",
+    "invent_sku",
+    "replace_ean",
+    "change_price",
+    "change_category",
+    "change_stock",
+    "change_active_status",
+    "change_weight_from_product_name"
+  ]
+}
