@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airtable-product-workbook-agent"
+version = "0.1.0"
+description = "Single-purpose agent for preparing product XLSX workbooks for controlled Airtable use."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "7DEJV" }]
+
+[project.scripts]
+airtable-workbook-agent = "airtable_workbook_agent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
