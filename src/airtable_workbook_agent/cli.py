@@ -82,7 +82,6 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(doctor.to_dict(), ensure_ascii=False, indent=2, default=str))
             return 2
         plan = build_sync_preview(args.input, args.mapping, client, args.plan)
-        plan["backend"] = args.backend
         if args.approval_template:
             create_approval_template(plan, args.approval_template)
         print(json.dumps(plan, ensure_ascii=False, indent=2, default=str))
@@ -94,7 +93,6 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(doctor.to_dict(), ensure_ascii=False, indent=2, default=str))
             return 2
         report = apply_sync_plan(args.plan, args.approval, client, args.report)
-        report["backend"] = args.backend
         print(json.dumps(report, ensure_ascii=False, indent=2, default=str))
         return 0
     return 1
