@@ -62,7 +62,12 @@ finally {
     $PlainToken = $null
     $SecureToken = $null
     if ($FromClipboard) {
-        Set-Clipboard -Value ""
-        Write-Host "Windows clipboard cleared."
+        try {
+            Set-Clipboard -Value "[cleared by airtable-agent]"
+            Write-Host "Windows clipboard overwritten."
+        }
+        catch {
+            Write-Warning "Could not overwrite the Windows clipboard automatically. Copy any harmless text manually."
+        }
     }
 }
