@@ -16,6 +16,20 @@ produktowego pliku XLSX do kontrolowanego użycia lub importu w Airtable.
    `EXPORT_GOTOWY`.
 8. Przypadki niejednoznaczne trafiają do `DO_WERYFIKACJI`.
 
+## Oficjalne skille Airtable
+
+Repozytorium zawiera przypięte, niezmodyfikowane skille z `Airtable/skills`:
+
+- `skills/airtable-overview/SKILL.md` — model danych Airtable;
+- `skills/airtable-filters/SKILL.md` — budowanie filtrów dla narzędzi Airtable MCP.
+
+Przed operacją na bazach, tabelach, polach, rekordach, widokach lub interfejsach
+przeczytaj `airtable-overview`. Przed wyszukiwaniem i filtrowaniem rekordów
+przeczytaj `airtable-filters`. Skille nie zastępują kontraktu XLSX i nie mogą
+rozszerzać zakresu wersji 0.1.0 o bezpośredni zapis do Airtable.
+
+Źródło, wersje i blob SHA znajdują się w `skills/UPSTREAM.json`.
+
 ## Polecenia testowe
 ```powershell
 python -m unittest discover -s tests -v
