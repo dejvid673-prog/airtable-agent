@@ -1,6 +1,8 @@
 #requires -Version 5.1
 [CmdletBinding()]
-param()
+param(
+    [switch]$FromClipboard
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -14,15 +16,39 @@ $SecretsDirectory = Join-Path $Root ".secrets"
 $TokenFile = Join-Path $SecretsDirectory "airtable-token.dpapi"
 New-Item -ItemType Directory -Force -Path $SecretsDirectory | Out-Null
 
-Write-Host "Paste the complete Airtable PAT. Input will remain hidden."
-Write-Host "The complete token must contain a dot and a long secret after the dot."
-$SecureToken = Read-Host "Token" -AsSecureString
-$Encrypted = ConvertFrom-SecureString $SecureToken
-Set-Content -Path $TokenFile -Value $Encrypted -Encoding ASCII
-
-. (Join-Path $PSScriptRoot "_airtable_rest_token.ps1")
-$env:AIRTABLE_TOKEN = Get-AirtableRestToken -TokenFile $TokenFile
+$PlainToken = $null
+$SecureToken = $null
 try {
+    if ($FromClipboard) {
+        Write-Host "Reading the complete Airtable PAT from the Windows clipboard."
+        $PlainToken = (Get-Clipboard -Raw).Trim()
+        if (-not $PlainToken) {
+            throw "The Windows clipboard is empty. Copy the complete Airtable PAT and run the command again."
+        }
+        $SecureToken = ConvertTo-SecureString $PlainToken -AsPlainText -Force
+    }
+    else {
+        Write-Host "Paste the complete Airtable PAT. Input will remain hidden."
+        Write-Host "The complete token must contain a dot and a long secret after the dot."
+        $SecureToken = Read-Host "Token" -AsSecureString
+        $Bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureToken)
+        try {
+            $PlainToken = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($Bstr)
+        }
+        finally {
+            [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Bstr)
+        }
+    }
+
+    if ($PlainToken -notmatch '^pat[^\.\s]{4,}\.[^\s]{9,}$') {
+        throw "The pasted value is not a complete Airtable PAT. Copy the full regenerated token, not the Token ID."
+    }
+
+    $Encrypted = ConvertFrom-SecureString $SecureToken
+    Set-Content -Path $TokenFile -Value $Encrypted -Encoding ASCII
+
+    . (Join-Path $PSScriptRoot "_airtable_rest_token.ps1")
+    $env:AIRTABLE_TOKEN = Get-AirtableRestToken -TokenFile $TokenFile
     & $Python -m airtable_workbook_agent doctor --backend rest
     if ($LASTEXITCODE -ne 0) {
         Write-Warning "Validation failed. The encrypted token was preserved so the diagnostic can be repeated after correcting Airtable scopes."
@@ -33,4 +59,10 @@ try {
 }
 finally {
     Remove-Item Env:AIRTABLE_TOKEN -ErrorAction SilentlyContinue
+    $PlainToken = $null
+    $SecureToken = $null
+    if ($FromClipboard) {
+        Set-Clipboard -Value ""
+        Write-Host "Windows clipboard cleared."
+    }
 }
