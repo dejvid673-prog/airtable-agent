@@ -49,6 +49,14 @@ jobs:
       - name: Run bootstrap installation
         shell: powershell
         run: .\scripts\bootstrap.ps1 -PythonCommand python -SkipAirtableCli -SkipTests
+      - name: Test encrypted REST token helper
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force .secrets | Out-Null
+          $secure = ConvertTo-SecureString "pat.test" -AsPlainText -Force
+          ConvertFrom-SecureString $secure | Set-Content .secrets\airtable-token.dpapi -Encoding ASCII
+          . .\scripts\_airtable_rest_token.ps1
+          if ((Get-AirtableRestToken) -ne "pat.test") { throw "DPAPI token round-trip failed." }
       - name: Test vendored Airtable skills
         shell: powershell
         run: .\.venv\Scripts\python.exe -m unittest tests.test_vendor_skills -v
@@ -61,6 +69,9 @@ jobs:
       - name: Test reporting
         shell: powershell
         run: .\.venv\Scripts\python.exe -m unittest tests.test_reporting -v
+      - name: Test Airtable REST layer
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_airtable_rest -v
       - name: Test Airtable CLI layer
         shell: powershell
         run: .\.venv\Scripts\python.exe -m unittest tests.test_airtable_cli -v
