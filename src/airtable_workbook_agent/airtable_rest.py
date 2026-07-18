@@ -19,18 +19,26 @@ class AirtableRESTDoctorResult:
     backend: str
     bases_visible: int
     write_scope_verified: bool
+    scopes: tuple[str, ...] = ()
+    missing_scopes: tuple[str, ...] = ()
+    user_id: str | None = None
+    base_discovery_error: str | None = None
     error: str | None = None
 
     @property
     def passed(self) -> bool:
-        return self.authenticated and not self.error
+        return self.authenticated and not self.missing_scopes and not self.error
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "passed": self.passed,
             "backend": self.backend,
             "authenticated": self.authenticated,
+            "user_id": self.user_id,
+            "scopes": list(self.scopes),
+            "missing_scopes": list(self.missing_scopes),
             "bases_visible": self.bases_visible,
+            "base_discovery_error": self.base_discovery_error,
             "write_scope_verified": self.write_scope_verified,
             "note": (
                 "Uprawnienie zapisu jest weryfikowane dopiero przez zatwierdzony create/update; "
@@ -51,12 +59,25 @@ class AirtableRESTClient:
     API_ROOT = "https://api.airtable.com/v0"
 
     def __init__(self, token: str | None = None, timeout: int = 120):
-        self.token = token or os.environ.get("AIRTABLE_TOKEN")
+        self.token = (token or os.environ.get("AIRTABLE_TOKEN") or "").strip()
         self.timeout = timeout
         if not self.token:
             raise AirtableRESTError(
                 "Brak AIRTABLE_TOKEN. Uruchom scripts/setup_airtable_rest.ps1."
             )
+        if not self._looks_like_full_pat(self.token):
+            raise AirtableRESTError(
+                "Wklejono niepełny Personal Access Token. Pełny PAT zaczyna się od 'pat', "
+                "zawiera kropkę i długi tajny ciąg po kropce. Token ID widoczny na liście "
+                "tokenów nie wystarcza. W Airtable wybierz Regenerate token i skopiuj całość."
+            )
+
+    @staticmethod
+    def _looks_like_full_pat(token: str) -> bool:
+        if not token.startswith("pat") or "." not in token:
+            return False
+        token_id, secret = token.split(".", 1)
+        return len(token_id) > 6 and len(secret) > 8
 
     def _request(
         self,
@@ -73,6 +94,7 @@ class AirtableRESTClient:
         headers = {
             "Authorization": f"Bearer {self.token}",
             "Accept": "application/json",
+            "User-Agent": "airtable-product-workbook-agent/0.2.0",
         }
         if payload is not None:
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -85,7 +107,15 @@ class AirtableRESTClient:
             raw = exc.read().decode("utf-8", errors="replace")
             try:
                 decoded = json.loads(raw)
-                message = decoded.get("error", decoded)
+                api_error = decoded.get("error", decoded)
+                if isinstance(api_error, dict):
+                    error_type = api_error.get("type")
+                    error_message = api_error.get("message")
+                    message = ": ".join(
+                        str(item) for item in (error_type, error_message) if item
+                    ) or str(api_error)
+                else:
+                    message = str(api_error)
             except json.JSONDecodeError:
                 message = raw or exc.reason
             raise AirtableRESTError(f"Airtable HTTP {exc.code}: {message}") from exc
@@ -98,6 +128,9 @@ class AirtableRESTClient:
         except json.JSONDecodeError as exc:
             raise AirtableRESTError("Airtable zwrócił niepoprawny JSON.") from exc
 
+    def whoami(self) -> dict[str, Any]:
+        return self._request("GET", "/meta/whoami")
+
     def list_bases(self) -> dict[str, Any]:
         return self._request("GET", "/meta/bases")
 
@@ -106,14 +139,7 @@ class AirtableRESTClient:
 
     def doctor(self, require_write: bool = False) -> AirtableRESTDoctorResult:
         try:
-            payload = self.list_bases()
-            bases = payload.get("bases", []) if isinstance(payload, dict) else []
-            return AirtableRESTDoctorResult(
-                authenticated=True,
-                backend="rest",
-                bases_visible=len(bases) if isinstance(bases, list) else 0,
-                write_scope_verified=False,
-            )
+            identity = self.whoami()
         except AirtableRESTError as exc:
             return AirtableRESTDoctorResult(
                 authenticated=False,
@@ -122,6 +148,38 @@ class AirtableRESTClient:
                 write_scope_verified=False,
                 error=str(exc),
             )
+
+        scopes = tuple(sorted(str(item) for item in identity.get("scopes", [])))
+        required_scopes = {"data.records:read", "schema.bases:read"}
+        if require_write:
+            required_scopes.add("data.records:write")
+        missing_scopes = tuple(sorted(required_scopes.difference(scopes)))
+
+        bases_visible = 0
+        base_discovery_error: str | None = None
+        if not missing_scopes:
+            try:
+                payload = self.list_bases()
+                bases = payload.get("bases", []) if isinstance(payload, dict) else []
+                bases_visible = len(bases) if isinstance(bases, list) else 0
+            except AirtableRESTError as exc:
+                base_discovery_error = str(exc)
+
+        return AirtableRESTDoctorResult(
+            authenticated=True,
+            backend="rest",
+            bases_visible=bases_visible,
+            write_scope_verified=False,
+            scopes=scopes,
+            missing_scopes=missing_scopes,
+            user_id=str(identity.get("id")) if identity.get("id") else None,
+            base_discovery_error=base_discovery_error,
+            error=(
+                "Token nie ma wymaganych zakresów: " + ", ".join(missing_scopes)
+                if missing_scopes
+                else None
+            ),
+        )
 
     def _records_path(self, base_id: str, table_id: str) -> str:
         return f"/{urllib.parse.quote(base_id)}/{urllib.parse.quote(table_id)}"
