@@ -15,6 +15,7 @@ $TokenFile = Join-Path $SecretsDirectory "airtable-token.dpapi"
 New-Item -ItemType Directory -Force -Path $SecretsDirectory | Out-Null
 
 Write-Host "Paste the complete Airtable PAT. Input will remain hidden."
+Write-Host "The complete token must contain a dot and a long secret after the dot."
 $SecureToken = Read-Host "Token" -AsSecureString
 $Encrypted = ConvertFrom-SecureString $SecureToken
 Set-Content -Path $TokenFile -Value $Encrypted -Encoding ASCII
@@ -24,8 +25,8 @@ $env:AIRTABLE_TOKEN = Get-AirtableRestToken -TokenFile $TokenFile
 try {
     & $Python -m airtable_workbook_agent doctor --backend rest
     if ($LASTEXITCODE -ne 0) {
-        Remove-Item -Force -ErrorAction SilentlyContinue $TokenFile
-        throw "REST authentication failed. The encrypted token file was removed."
+        Write-Warning "Validation failed. The encrypted token was preserved so the diagnostic can be repeated after correcting Airtable scopes."
+        throw "REST validation failed. Read the JSON error shown above."
     }
     Write-Host "Airtable REST configuration completed."
     Write-Host "Encrypted token: $TokenFile"
