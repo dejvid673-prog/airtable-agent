@@ -6,6 +6,9 @@ from unittest.mock import patch
 from airtable_workbook_agent.airtable_rest import AirtableRESTClient, AirtableRESTError
 
 
+FULL_PAT = "patExample123456.secretExample123456"
+
+
 class FakeResponse:
     def __init__(self, payload):
         self.payload = json.dumps(payload).encode("utf-8")
@@ -26,21 +29,50 @@ class AirtableRESTTests(unittest.TestCase):
             with self.assertRaises(AirtableRESTError):
                 AirtableRESTClient()
 
+    def test_rejects_visible_token_id_without_secret(self):
+        with self.assertRaisesRegex(AirtableRESTError, "niepełny Personal Access Token"):
+            AirtableRESTClient(token="patgBJ16dtt2yuYMD")
+
     @patch("urllib.request.urlopen")
-    def test_doctor_validates_pat_without_write(self, urlopen):
-        urlopen.return_value = FakeResponse({"bases": [{"id": "app123"}]})
-        result = AirtableRESTClient(token="pat.test").doctor(require_write=True)
+    def test_doctor_validates_whoami_scopes_and_bases(self, urlopen):
+        urlopen.side_effect = [
+            FakeResponse({
+                "id": "usr123",
+                "scopes": ["data.records:read", "data.records:write", "schema.bases:read"],
+            }),
+            FakeResponse({"bases": [{"id": "app123"}]}),
+        ]
+        result = AirtableRESTClient(token=FULL_PAT).doctor(require_write=True)
         self.assertTrue(result.passed)
+        self.assertEqual(result.user_id, "usr123")
         self.assertEqual(result.bases_visible, 1)
+        self.assertEqual(result.missing_scopes, ())
         self.assertFalse(result.write_scope_verified)
-        request = urlopen.call_args.args[0]
-        self.assertEqual(request.get_header("Authorization"), "Bearer pat.test")
-        self.assertTrue(request.full_url.endswith("/v0/meta/bases"))
+        first_request = urlopen.call_args_list[0].args[0]
+        second_request = urlopen.call_args_list[1].args[0]
+        self.assertEqual(first_request.get_header("Authorization"), f"Bearer {FULL_PAT}")
+        self.assertTrue(first_request.full_url.endswith("/v0/meta/whoami"))
+        self.assertTrue(second_request.full_url.endswith("/v0/meta/bases"))
+
+    @patch("urllib.request.urlopen")
+    def test_doctor_reports_missing_scopes_without_listing_bases(self, urlopen):
+        urlopen.return_value = FakeResponse({
+            "id": "usr123",
+            "scopes": ["data.records:read"],
+        })
+        result = AirtableRESTClient(token=FULL_PAT).doctor(require_write=True)
+        self.assertFalse(result.passed)
+        self.assertTrue(result.authenticated)
+        self.assertEqual(
+            result.missing_scopes,
+            ("data.records:write", "schema.bases:read"),
+        )
+        self.assertEqual(urlopen.call_count, 1)
 
     @patch("urllib.request.urlopen")
     def test_list_records_uses_field_ids_and_offset(self, urlopen):
         urlopen.return_value = FakeResponse({"records": [], "offset": "next"})
-        client = AirtableRESTClient(token="pat.test")
+        client = AirtableRESTClient(token=FULL_PAT)
         payload = client.call("list_records_for_table", {
             "baseId": "app123",
             "tableId": "tbl123",
@@ -60,7 +92,7 @@ class AirtableRESTTests(unittest.TestCase):
             FakeResponse({"records": [{"id": "rec1"}]}),
             FakeResponse({"records": [{"id": "rec1"}]}),
         ]
-        client = AirtableRESTClient(token="pat.test")
+        client = AirtableRESTClient(token=FULL_PAT)
         client.call("create_records_for_table", {
             "baseId": "app123", "tableId": "tbl123",
             "records": [{"fields": {"fldA": "A"}}],
