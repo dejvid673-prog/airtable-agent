@@ -19,6 +19,18 @@ analyze → plan → apply → verify
 Agent nie łączy się jeszcze bezpośrednio z Airtable i nie uruchamia się
 automatycznie.
 
+## Oficjalne skille Airtable
+
+Repozytorium zawiera dwie niezmodyfikowane umiejętności z oficjalnego repozytorium
+`Airtable/skills`:
+
+- `skills/airtable-overview/SKILL.md` — model danych Airtable;
+- `skills/airtable-filters/SKILL.md` — filtry rekordów dla Airtable MCP.
+
+Oba skille mają wersję `1.0.0` i są przypięte do commita
+`295ab93b7d765912ee1a0dc7f1abb0ecaf73f138`. Szczegóły pochodzenia i blob SHA
+znajdują się w `skills/UPSTREAM.json`, a licencja w `THIRD_PARTY_NOTICES.md`.
+
 ## Wynik
 
 W pliku wynikowym tworzone są arkusze:
