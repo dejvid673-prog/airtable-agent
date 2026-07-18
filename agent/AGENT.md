@@ -9,6 +9,15 @@ pracy lub importu w Airtable.
 - kontrakt `contracts/product_workbook_contract.json`;
 - ręczne polecenie człowieka.
 
+## Dostępne skille
+
+- `skills/airtable-overview/SKILL.md` — stosuj przed analizą modelu danych Airtable;
+- `skills/airtable-filters/SKILL.md` — stosuj przed budowaniem filtrów Airtable MCP.
+
+Skille są oficjalnymi, niezmodyfikowanymi kopiami z `Airtable/skills`, przypiętymi
+w `skills/UPSTREAM.json`. W wersji 0.1.0 są przygotowaniem do późniejszego etapu
+Airtable i nie uruchamiają bezpośredniego importu ani zapisu rekordów.
+
 ## Procedura obowiązkowa
 1. Oblicz SHA-256 pliku wejściowego.
 2. Odczytaj rzeczywistą listę arkuszy i strukturę `EXPORT`.
