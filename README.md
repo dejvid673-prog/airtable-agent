@@ -1,84 +1,79 @@
 # Airtable Product Workbook Agent
 
-Agent przygotowuje produktowy skoroszyt XLSX, generuje kontrolowany plan synchronizacji i — dopiero po ręcznym zatwierdzeniu — tworzy lub aktualizuje rekordy w Airtable przez oficjalny `@airtable/mcp-cli`.
+Agent przygotowuje produktowy skoroszyt XLSX, generuje kontrolowany plan synchronizacji i — dopiero po ręcznym zatwierdzeniu — tworzy lub aktualizuje rekordy w Airtable.
 
-## Zakres wersji 0.2.0
+## Workflow
 
 ```text
 prepare XLSX → verify → Airtable preview → approval → Airtable apply
 ```
 
-### Przygotowanie XLSX
+## Przygotowanie XLSX
 
 Agent:
 
 - ujednolica nazwy bez zgadywania treści produktu;
 - rozdziela długość, pojemność, ilość, wagę produktu, wagę wysyłkową, wytrzymałość i ciężar elementu;
-- mapuje istniejące podkategorie do dokładnie trzech kategorii głównych:
-  - `Wędkarstwo`,
-  - `Stawy i oczka wodne`,
-  - `Ryby`;
+- mapuje istniejące podkategorie do dokładnie trzech kategorii głównych: `Wędkarstwo`, `Stawy i oczka wodne`, `Ryby`;
 - nie zmienia cen, stanów, aktywności ani EAN;
 - nigdy nie nadpisuje wejścia;
 - zachowuje oryginalne arkusze i dodaje arkusze wynikowe.
 
-### Airtable
+## Airtable
 
-Agent używa oficjalnego CLI Airtable, które dynamicznie odkrywa aktualne narzędzia MCP. Tryb zapisu jest zabezpieczony planem SHA-256 oraz oddzielnym plikiem zatwierdzenia.
+Domyślnym transportem jest oficjalny Airtable Web API (`--backend rest`). Opcjonalnie można użyć oficjalnego `@airtable/mcp-cli` (`--backend mcp`). Oba transporty korzystają z tego samego mechanizmu bezpieczeństwa:
 
-Agent nie usuwa rekordów i nie zmienia schematu bazy.
+- preview bez zapisu;
+- plan zabezpieczony SHA-256;
+- oddzielny plik zatwierdzenia;
+- limity create/update;
+- partie maksymalnie 10 rekordów;
+- brak delete;
+- brak zmian schematu.
+
+Token REST jest przechowywany lokalnie jako zaszyfrowany plik Windows DPAPI w `.secrets/` i nie trafia do Git.
 
 ## Instalacja Windows
 
-W PowerShell, w katalogu repozytorium, uruchom jedno polecenie:
+W PowerShell, w katalogu repozytorium:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\bootstrap.ps1"
 ```
 
-Instalacja razem z oficjalnym pluginem Airtable dla Codexa:
+Skrypt tworzy `.venv`, instaluje pakiet Python i uruchamia testy. Node.js nie jest wymagany dla domyślnego backendu REST.
+
+Opcjonalny MCP CLI:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1 -InstallCodexPlugin
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\bootstrap.ps1" -InstallAirtableCli
 ```
 
-Skrypt tworzy `.venv`, instaluje pakiet Python oraz oficjalny `@airtable/mcp-cli`, a następnie uruchamia testy. Nie wpisuj pytań tekstowych w oknie PowerShell — PowerShell traktuje je jako nazwy poleceń.
-
-Następnie skonfiguruj Airtable:
+## Konfiguracja Airtable REST
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_airtable.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\setup_airtable.ps1"
 ```
+
+Wklej pełny PAT. Pole wejściowe pozostaje niewidoczne. Skrypt szyfruje token przez Windows DPAPI i wykonuje kontrolę read-only przez Airtable Web API.
 
 ## Przygotowanie pliku
 
 ```powershell
-.\scripts\prepare_workbook.ps1 `
-  -InputFile "C:\Dane\produkty.xlsx"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\prepare_workbook.ps1" -InputFile "C:\Dane\produkty.xlsx"
 ```
 
 Wynik trafia do `data/output`, a raporty do `runs`.
 
 ## Podgląd synchronizacji Airtable
 
-Najpierw skopiuj i uzupełnij:
-
-```text
-contracts/airtable_mapping.example.json
-```
-
-Następnie:
+Skopiuj i uzupełnij `contracts/airtable_mapping.example.json` jako `contracts/airtable_mapping.local.json`, wpisując identyfikatory `app...`, `tbl...` i `fld...`.
 
 ```powershell
-.\scripts\preview_airtable.ps1 `
-  -InputFile "data\output\produkty_przygotowane.xlsx" `
-  -MappingFile "contracts\airtable_mapping.local.json"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\preview_airtable.ps1" -InputFile "data\output\produkty_przygotowane.xlsx" -MappingFile "contracts\airtable_mapping.local.json"
 ```
 
-Powstaną:
-
-- plan synchronizacji JSON;
-- szablon zatwierdzenia z `approved=false`.
+Powstaną plan synchronizacji JSON i szablon zatwierdzenia z `approved=false`.
 
 ## Zatwierdzony zapis
 
@@ -94,16 +89,12 @@ Po ręcznym sprawdzeniu planu ustaw w pliku zatwierdzenia:
 Następnie:
 
 ```powershell
-.\scripts\apply_airtable.ps1 `
-  -PlanFile "runs\airtable-plan.json" `
-  -ApprovalFile "approvals\airtable-approval.json"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\apply_airtable.ps1" -PlanFile "runs\airtable-plan.json" -ApprovalFile "approvals\airtable-approval.json"
 ```
 
-## Diagnostyka
+## Diagnostyka REST
 
-```powershell
-.\.venv\Scripts\python.exe -m airtable_workbook_agent doctor --require-write
-```
+Skrypty użytkownika automatycznie odszyfrowują token tylko na czas pojedynczego procesu. Ręczna diagnostyka wymaga ustawienia `AIRTABLE_TOKEN` w bieżącym procesie albo użycia `setup_airtable.ps1`.
 
 ## Testy
 
