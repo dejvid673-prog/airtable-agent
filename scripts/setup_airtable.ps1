@@ -1,18 +1,26 @@
 #requires -Version 5.1
 [CmdletBinding()]
 param(
+    [ValidateSet("rest", "mcp")][string]$Backend = "rest",
     [string]$Profile
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+if ($Backend -eq "rest") {
+    & (Join-Path $PSScriptRoot "setup_airtable_rest.ps1")
+    if ($LASTEXITCODE -ne 0) {
+        throw "REST setup failed with exit code $LASTEXITCODE."
+    }
+    return
+}
+
 function Invoke-NativeCommand {
     param(
         [Parameter(Mandatory = $true)][string]$FilePath,
         [Parameter(Mandatory = $true)][string[]]$ArgumentList
     )
-
     & $FilePath @ArgumentList
     if ($LASTEXITCODE -ne 0) {
         throw "Command failed with exit code $LASTEXITCODE`: $FilePath $($ArgumentList -join ' ')"
@@ -38,9 +46,6 @@ $Python = Join-Path $Root ".venv\Scripts\python.exe"
 if (-not (Test-Path $Python)) {
     throw "Virtual environment was not found. Run .\scripts\bootstrap.ps1 first."
 }
-
-$DoctorArgs = @("-m", "airtable_workbook_agent", "doctor", "--require-write")
-if ($Profile) {
-    $DoctorArgs += @("--profile", $Profile)
-}
+$DoctorArgs = @("-m", "airtable_workbook_agent", "doctor", "--backend", "mcp", "--require-write")
+if ($Profile) { $DoctorArgs += @("--profile", $Profile) }
 Invoke-NativeCommand -FilePath $Python -ArgumentList $DoctorArgs
