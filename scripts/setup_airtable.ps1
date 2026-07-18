@@ -1,23 +1,46 @@
+#requires -Version 5.1
+[CmdletBinding()]
 param(
     [string]$Profile
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+function Invoke-NativeCommand {
+    param(
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string[]]$ArgumentList
+    )
+
+    & $FilePath @ArgumentList
+    if ($LASTEXITCODE -ne 0) {
+        throw "Command failed with exit code $LASTEXITCODE`: $FilePath $($ArgumentList -join ' ')"
+    }
+}
+
 if (-not (Get-Command airtable-mcp -ErrorAction SilentlyContinue)) {
-    throw "Brak airtable-mcp. Uruchom wcześniej .\scripts\bootstrap.ps1"
+    throw "airtable-mcp was not found. Run .\scripts\bootstrap.ps1 first."
 }
 
 if ($Profile) {
-    airtable-mcp configure --profile $Profile
-    airtable-mcp whoami --profile $Profile
-    airtable-mcp tools --profile $Profile --refresh
+    Invoke-NativeCommand -FilePath "airtable-mcp" -ArgumentList @("configure", "--profile", $Profile)
+    Invoke-NativeCommand -FilePath "airtable-mcp" -ArgumentList @("whoami", "--profile", $Profile)
+    Invoke-NativeCommand -FilePath "airtable-mcp" -ArgumentList @("tools", "--profile", $Profile, "--refresh")
 } else {
-    airtable-mcp configure
-    airtable-mcp whoami
-    airtable-mcp tools --refresh
+    Invoke-NativeCommand -FilePath "airtable-mcp" -ArgumentList @("configure")
+    Invoke-NativeCommand -FilePath "airtable-mcp" -ArgumentList @("whoami")
+    Invoke-NativeCommand -FilePath "airtable-mcp" -ArgumentList @("tools", "--refresh")
 }
 
-$Python = Join-Path (Split-Path -Parent $PSScriptRoot) ".venv\Scripts\python.exe"
+$Root = Split-Path -Parent $PSScriptRoot
+$Python = Join-Path $Root ".venv\Scripts\python.exe"
+if (-not (Test-Path $Python)) {
+    throw "Virtual environment was not found. Run .\scripts\bootstrap.ps1 first."
+}
+
 $DoctorArgs = @("-m", "airtable_workbook_agent", "doctor", "--require-write")
-if ($Profile) { $DoctorArgs += @("--profile", $Profile) }
-& $Python @DoctorArgs
+if ($Profile) {
+    $DoctorArgs += @("--profile", $Profile)
+}
+Invoke-NativeCommand -FilePath $Python -ArgumentList $DoctorArgs
