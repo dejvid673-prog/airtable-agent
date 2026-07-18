@@ -3,10 +3,28 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 from .airtable_cli import AirtableCLI
+from .airtable_rest import AirtableRESTClient
 from .airtable_sync import apply_sync_plan, build_sync_preview, create_approval_template
 from .runtime import prepare_workbook, verify_workbook
+
+
+def _airtable_client(backend: str, profile: str | None) -> Any:
+    if backend == "rest":
+        return AirtableRESTClient()
+    return AirtableCLI(profile=profile)
+
+
+def _add_backend_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--backend",
+        choices=("rest", "mcp"),
+        default="rest",
+        help="Transport Airtable. REST jest domyślny; MCP pozostaje opcjonalny.",
+    )
+    parser.add_argument("--profile", help="Profil airtable-mcp używany tylko z --backend mcp.")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -24,8 +42,8 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--output", required=True, type=Path)
     verify.add_argument("--contract", type=Path)
 
-    doctor = sub.add_parser("doctor", help="Sprawdza lokalny runtime i Airtable MCP CLI.")
-    doctor.add_argument("--profile")
+    doctor = sub.add_parser("doctor", help="Sprawdza dostęp do Airtable bez zapisu.")
+    _add_backend_arguments(doctor)
     doctor.add_argument("--require-write", action="store_true")
 
     preview = sub.add_parser("airtable-preview", help="Tworzy plan create/update bez zapisu.")
@@ -33,13 +51,13 @@ def build_parser() -> argparse.ArgumentParser:
     preview.add_argument("--mapping", required=True, type=Path)
     preview.add_argument("--plan", required=True, type=Path)
     preview.add_argument("--approval-template", type=Path)
-    preview.add_argument("--profile")
+    _add_backend_arguments(preview)
 
     apply = sub.add_parser("airtable-apply", help="Wykonuje zatwierdzony plan Airtable.")
     apply.add_argument("--plan", required=True, type=Path)
     apply.add_argument("--approval", required=True, type=Path)
     apply.add_argument("--report", required=True, type=Path)
-    apply.add_argument("--profile")
+    _add_backend_arguments(apply)
     return parser
 
 
@@ -54,27 +72,29 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
         return 0 if result["passed"] else 2
     if args.command == "doctor":
-        result = AirtableCLI(profile=args.profile).doctor(require_write=args.require_write)
+        result = _airtable_client(args.backend, args.profile).doctor(require_write=args.require_write)
         print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2, default=str))
         return 0 if result.passed else 2
     if args.command == "airtable-preview":
-        cli = AirtableCLI(profile=args.profile)
-        doctor = cli.doctor(require_write=False)
+        client = _airtable_client(args.backend, args.profile)
+        doctor = client.doctor(require_write=False)
         if not doctor.passed:
             print(json.dumps(doctor.to_dict(), ensure_ascii=False, indent=2, default=str))
             return 2
-        plan = build_sync_preview(args.input, args.mapping, cli, args.plan)
+        plan = build_sync_preview(args.input, args.mapping, client, args.plan)
+        plan["backend"] = args.backend
         if args.approval_template:
             create_approval_template(plan, args.approval_template)
         print(json.dumps(plan, ensure_ascii=False, indent=2, default=str))
         return 0 if not plan["counts"]["conflict"] and not plan["counts"]["blocked"] else 3
     if args.command == "airtable-apply":
-        cli = AirtableCLI(profile=args.profile)
-        doctor = cli.doctor(require_write=True)
+        client = _airtable_client(args.backend, args.profile)
+        doctor = client.doctor(require_write=True)
         if not doctor.passed:
             print(json.dumps(doctor.to_dict(), ensure_ascii=False, indent=2, default=str))
             return 2
-        report = apply_sync_plan(args.plan, args.approval, cli, args.report)
+        report = apply_sync_plan(args.plan, args.approval, client, args.report)
+        report["backend"] = args.backend
         print(json.dumps(report, ensure_ascii=False, indent=2, default=str))
         return 0
     return 1
