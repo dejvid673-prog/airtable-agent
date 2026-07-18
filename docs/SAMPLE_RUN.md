@@ -1,32 +1,24 @@
-# Przykładowe uruchomienie
+# Przykładowe uruchomienie 0.2.0
 
-Przetestowano wersję `0.1.0` na przykładowym skoroszycie produktowym.
-Rzeczywisty plik i dane rekordów nie są przechowywane w repozytorium.
+Test lokalnego backendu wykonano na przykładowym skoroszycie produktowym.
 
-## Struktura wejścia
+## Wejście
 
-- arkusz źródłowy: `EXPORT`;
-- rekordy: 865;
-- kolumny: 11;
-- dodatkowy arkusz pomocniczy: `DANE_POMOCNICZE`.
+- 865 rekordów;
+- 11 kolumn źródłowych;
+- arkusze `EXPORT` i `DANE_POMOCNICZE`.
 
-## Wynik audytu
+## Wynik
 
-- `ERROR`: 7;
-- `WARNING`: 97;
-- `REVIEW`: 253;
-- `INFO`: 368;
-- automatyczne zmiany danych produktu: 0.
+- 865 rekordów w `EXPORT_GOTOWY`;
+- identyczna kolejność ID i SKU;
+- dokładnie trzy kategorie główne;
+- 389 rekordów z wydzieloną długością;
+- 219 rekordów z wydzieloną pojemnością;
+- 122 rekordy z wydzieloną ilością;
+- 228 rekordów z jednoznaczną wagą produktu;
+- techniczne kody typu `612 cm` i `2535 cm` odfiltrowane;
+- plik wejściowy zachował SHA-256;
+- `verification.passed=true`.
 
-Agent prawidłowo odmówił automatycznej korekty niejednoznacznych danych.
-Utworzył arkusz przygotowany oraz listę przypadków do weryfikacji.
-
-## Weryfikacja
-
-- plik wejściowy pozostał bez zmian;
-- zachowano 865 z 865 rekordów;
-- nagłówki są identyczne;
-- kolejność ID produktu jest identyczna;
-- kolejność SKU jest identyczna;
-- wszystkie arkusze wynikowe zostały utworzone;
-- drugi przebieg dał identyczne wartości w `EXPORT_GOTOWY`.
+Test Airtable wykonuje się osobno na testowej tabeli po skonfigurowaniu PAT i lokalnego mapowania `fld...`.

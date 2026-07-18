@@ -1,21 +1,34 @@
 # Current state
 
-Wersja: `0.1.0`
+Wersja: `0.2.0`
 
-## Zaimplementowane
-- kontrakt 11 kolumn produktowych;
-- audyt braków, unikalności, EAN, cen, wag, stanów i wariantów;
-- wykrywanie niezgodności dokumentacji arkuszy;
-- generowanie `EXPORT_GOTOWY` i trzech arkuszy kontrolnych;
-- ochrona pliku wejściowego przez SHA-256;
-- raporty JSON/Markdown;
-- testy jednostkowe oraz opcjonalny test integracyjny;
-- oficjalny skill `airtable-overview` v1.0.0;
-- oficjalny skill `airtable-filters` v1.0.0;
-- przypięte źródło, commit, blob SHA i licencja skilli;
-- test integralności niezmodyfikowanych plików upstream.
+## Gotowe
 
-## Cel kolejnego audytu
-Ocenić reguły na finalnym pliku oraz sposób rzeczywistego ładowania skilli przez
-wybranego klienta agenta. Dopiero później rozszerzyć kontrakt, dodać bezpośredni
-etap Airtable albo lokalny backend niezależny od środowiska OpenAI.
+- lokalny backend XLSX oparty na `openpyxl`;
+- uruchamianie na Windows bez `artifact_tool`;
+- ujednolicanie nazw i rozdzielanie miar;
+- mapowanie do trzech kategorii głównych;
+- zachowanie wejścia i weryfikacja ID/SKU;
+- oficjalny backend Airtable `@airtable/mcp-cli`;
+- diagnostyka auth/narzędzi;
+- podgląd create/update/unchanged/conflict/blocked;
+- plan z SHA-256;
+- ręczne zatwierdzenie przed zapisem;
+- zapis create/update w partiach maksymalnie 10;
+- oficjalne skille Airtable;
+- testy jednostkowe i integracyjne z atrapą CLI.
+
+## Zweryfikowane na przykładowym pliku
+
+- 865 rekordów wejściowych i wynikowych;
+- zachowane ID i SKU;
+- wyłącznie trzy kategorie główne;
+- poprawne odfiltrowanie technicznych kodów rozmiaru;
+- brak zmian pliku wejściowego.
+
+## Do audytu produkcyjnego
+
+- mapowanie finalnej bazy i tabeli Airtable;
+- rzeczywisty test READ_ONLY na koncie użytkownika;
+- rzeczywisty test zapisu na testowej tabeli;
+- przegląd wyników przed scaleniem PR.

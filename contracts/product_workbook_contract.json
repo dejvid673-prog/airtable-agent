@@ -1,5 +1,5 @@
 {
-  "contract_version": "0.1.0",
+  "contract_version": "0.2.0",
   "source_sheet": "EXPORT",
   "prepared_sheet": "EXPORT_GOTOWY",
   "required_columns": [
@@ -15,6 +15,52 @@
     "Aktywny",
     "EAN"
   ],
+  "category_mapping": {
+    "Akcesoria wędkarskie": "Wędkarstwo",
+    "Kulki proteinowe": "Wędkarstwo",
+    "Sprzęt wędkarski": "Wędkarstwo",
+    "Zanęty i method mixy": "Wędkarstwo",
+    "Dipy, aromaty i boostery": "Wędkarstwo",
+    "Przypony i haki": "Wędkarstwo",
+    "Pellety": "Wędkarstwo",
+    "Pop-up i mini przynęty": "Wędkarstwo",
+    "Dumbells / wafters": "Wędkarstwo",
+    "Łowisko i vouchery": "Wędkarstwo",
+    "Żyłki i plecionki": "Wędkarstwo",
+    "Kreda stawowa": "Stawy i oczka wodne",
+    "Preparaty do wody": "Stawy i oczka wodne",
+    "pH i parametry wody": "Stawy i oczka wodne",
+    "Wapno do stawu": "Stawy i oczka wodne",
+    "Rośliny wodne": "Stawy i oczka wodne",
+    "Ryby żywe i ozdobne": "Ryby",
+    "Karma dla ryb": "Ryby"
+  },
+  "allowed_main_categories": [
+    "Wędkarstwo",
+    "Stawy i oczka wodne",
+    "Ryby"
+  ],
+  "weight_optional_subcategories": [
+    "Ryby żywe i ozdobne",
+    "Rośliny wodne"
+  ],
+  "shipping_weight_multiplier": 1.1,
+  "automatic_data_changes": [
+    "normalize_whitespace",
+    "extract_measurements",
+    "map_existing_subcategories_to_three_main_categories",
+    "derive_shipping_weight_when_unambiguous"
+  ],
+  "forbidden_automatic_changes": [
+    "delete_record",
+    "merge_record",
+    "invent_sku",
+    "replace_ean",
+    "change_price",
+    "change_stock",
+    "change_active_status",
+    "guess_unmapped_subcategory"
+  ],
   "required_value_columns": [
     "ID produktu",
     "SKU",
@@ -25,30 +71,16 @@
     "Stan",
     "Aktywny"
   ],
-  "unique_columns": ["ID produktu", "SKU"],
-  "review_duplicate_columns": ["Nazwa produktu", "EAN"],
+  "unique_columns": [
+    "ID produktu",
+    "SKU"
+  ],
+  "review_duplicate_columns": [
+    "Nazwa produktu",
+    "EAN"
+  ],
   "ean": {
     "optional": true,
     "digits": 13
-  },
-  "weight_optional_subcategories": [
-    "Ryby żywe i ozdobne",
-    "Rośliny wodne",
-    "Ślimaki i małże"
-  ],
-  "automatic_data_changes": [
-    "trim_outer_whitespace",
-    "collapse_repeated_whitespace"
-  ],
-  "forbidden_automatic_changes": [
-    "delete_record",
-    "merge_record",
-    "invent_sku",
-    "replace_ean",
-    "change_price",
-    "change_category",
-    "change_stock",
-    "change_active_status",
-    "change_weight_from_product_name"
-  ]
+  }
 }

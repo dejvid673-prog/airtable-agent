@@ -8,6 +8,12 @@
 *.xls
 *.xlsb
 
+# Local Airtable configuration
+contracts/*.local.json
+.codex/config.toml
+.env
+.env.*
+
 # Keep directory placeholders if created locally
 !/data/input/.gitkeep
 !/data/output/.gitkeep

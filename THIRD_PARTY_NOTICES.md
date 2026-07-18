@@ -5,15 +5,17 @@
 This repository includes unmodified copies of:
 
 - `airtable-overview` version `1.0.0`;
-- `airtable-filters` version `1.0.0`.
+- `airtable-filters` version `1.0.0`;
+- `airtable-cli` pinned to source commit `cb61a3f2bd95108fdbd3474418facec8aebf8f46`.
 
-Source repository: `https://github.com/Airtable/skills`
+Sources:
 
-Pinned source commit: `295ab93b7d765912ee1a0dc7f1abb0ecaf73f138`
+- `https://github.com/Airtable/skills` at `295ab93b7d765912ee1a0dc7f1abb0ecaf73f138`;
+- `https://github.com/Airtable/airtable-mcp-cli` at `cb61a3f2bd95108fdbd3474418facec8aebf8f46`.
 
 Copyright (c) 2026 Airtable
 
-### MIT License
+## MIT License
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

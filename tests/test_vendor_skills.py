@@ -16,17 +16,16 @@ def git_blob_sha(path: Path) -> str:
 class VendoredSkillTests(unittest.TestCase):
     def test_airtable_skills_match_pinned_upstream_blobs(self):
         manifest = json.loads((ROOT / "skills" / "UPSTREAM.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["source_commit"], "295ab93b7d765912ee1a0dc7f1abb0ecaf73f138")
-        self.assertEqual(len(manifest["skills"]), 2)
-
+        self.assertEqual(len(manifest["skills"]), 3)
         for skill in manifest["skills"]:
             path = ROOT / skill["local_path"]
             self.assertTrue(path.exists(), skill["local_path"])
             self.assertEqual(git_blob_sha(path), skill["upstream_blob_sha"])
             text = path.read_text(encoding="utf-8")
-            self.assertIn(f"name: {skill['name']}", text)
-            self.assertIn(f"version: '{skill['version']}'", text)
-            self.assertIn("license: MIT", text)
+            for marker in skill["required_markers"]:
+                self.assertIn(marker, text)
+            self.assertEqual(skill["license"], "MIT")
+            self.assertTrue(skill["source_commit"])
 
 
 if __name__ == "__main__":

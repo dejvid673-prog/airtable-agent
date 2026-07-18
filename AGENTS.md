@@ -1,44 +1,55 @@
-# AGENTS.md — Airtable Product Workbook Preparation Agent
+# AGENTS.md — Airtable Product Workbook Agent
 
-## Cel repozytorium
-Repozytorium zawiera jednego agenta wykonującego jedną pracę: przygotowanie
-produktowego pliku XLSX do kontrolowanego użycia lub importu w Airtable.
+## Cel
 
-## Zasady nadrzędne
-1. Nigdy nie nadpisuj pliku wejściowego.
-2. Rzeczywiste dane biznesowe nie mogą trafić do GitHub.
-3. Najpierw wykonaj `analyze`, potem `plan`, dopiero następnie `apply` i `verify`.
-4. Nie usuwaj ani nie scalaj rekordów automatycznie.
-5. Nie poprawiaj ceny, EAN, SKU, nazwy, kategorii, wagi ani stanu, gdy reguła nie
-   daje jednoznacznego wyniku.
-6. Każda zmiana musi być widoczna w raporcie różnic.
-7. Arkusz źródłowy pozostaje niezmieniony; przygotowane dane trafiają do
-   `EXPORT_GOTOWY`.
-8. Przypadki niejednoznaczne trafiają do `DO_WERYFIKACJI`.
+Repozytorium zawiera jednego agenta realizującego kontrolowany proces:
 
-## Oficjalne skille Airtable
-
-Repozytorium zawiera przypięte, niezmodyfikowane skille z `Airtable/skills`:
-
-- `skills/airtable-overview/SKILL.md` — model danych Airtable;
-- `skills/airtable-filters/SKILL.md` — budowanie filtrów dla narzędzi Airtable MCP.
-
-Przed operacją na bazach, tabelach, polach, rekordach, widokach lub interfejsach
-przeczytaj `airtable-overview`. Przed wyszukiwaniem i filtrowaniem rekordów
-przeczytaj `airtable-filters`. Skille nie zastępują kontraktu XLSX i nie mogą
-rozszerzać zakresu wersji 0.1.0 o bezpośredni zapis do Airtable.
-
-Źródło, wersje i blob SHA znajdują się w `skills/UPSTREAM.json`.
-
-## Polecenia testowe
-```powershell
-python -m unittest discover -s tests -v
-python -m airtable_workbook_agent --help
+```text
+prepare XLSX → verify → Airtable preview → human approval → Airtable apply
 ```
 
-## Kryteria zakończenia
-- wszystkie testy jednostkowe przechodzą;
-- test integracyjny jest wykonany, gdy środowisko udostępnia `artifact_tool`;
-- plik wejściowy zachowuje identyczny SHA-256;
-- liczba rekordów i zestaw ID/SKU w `EXPORT_GOTOWY` odpowiadają źródłu;
-- raport podaje wykonane, pominięte i zablokowane działania.
+## Obowiązkowe materiały
+
+Przed pracą przeczytaj:
+
+1. `agent/AGENT.md`;
+2. `agent/WORKFLOW.md`;
+3. `contracts/product_workbook_contract.json`;
+4. `skills/airtable-overview/SKILL.md` przed interpretacją modelu Airtable;
+5. `skills/airtable-filters/SKILL.md` przed filtrowaniem rekordów;
+6. `skills/airtable-cli/SKILL.md` przed wywołaniem `airtable-mcp`.
+
+## Zasady bezpieczeństwa
+
+1. Nigdy nie nadpisuj wejściowego XLSX.
+2. Nie umieszczaj rzeczywistych danych biznesowych, tokenów, planów ani raportów w GitHub.
+3. Nie zakładaj `baseId`, `tableId`, `fieldId` ani nazw pól — użyj MCP/CLI do odkrycia schematu.
+4. Domyślny tryb Airtable to READ_ONLY/PREVIEW.
+5. Zapis jest dozwolony tylko dla planu z poprawnym SHA-256 i pliku zatwierdzenia z `approved=true`.
+6. Nie usuwaj rekordów i nie zmieniaj schematu bazy.
+7. Dziel zapis na partie maksymalnie 10 rekordów.
+8. Przerwij przy duplikacie klucza, brakującym kluczu, nieznanej podkategorii lub niezgodności planu z zatwierdzeniem.
+9. Nigdy nie loguj `AIRTABLE_TOKEN`.
+10. Każda wykonana operacja musi mieć raport JSON.
+
+## Testy obowiązkowe
+
+```powershell
+python -m compileall -q src tests
+python -m unittest discover -s tests -v
+```
+
+Przed dopuszczeniem zapisu uruchom również:
+
+```powershell
+python -m airtable_workbook_agent doctor --require-write
+```
+
+## Definicja ukończenia
+
+- testy przechodzą;
+- lokalne przygotowanie XLSX działa bez `artifact_tool`;
+- wejściowy SHA-256 pozostaje niezmieniony;
+- plan Airtable powstaje bez zapisu;
+- `airtable-apply` odrzuca brak zatwierdzenia i zmodyfikowany plan;
+- PR pozostaje draftem do audytu człowieka.

@@ -1,41 +1,47 @@
-# Airtable Product Workbook Preparation Agent
+# Airtable Product Workbook Agent
 
 ## Rola
-Jednozadaniowy agent przygotowujący produktowy skoroszyt XLSX do kontrolowanej
-pracy lub importu w Airtable.
 
-## Wejście
-- jeden plik `.xlsx`;
-- kontrakt `contracts/product_workbook_contract.json`;
-- ręczne polecenie człowieka.
+Jednozadaniowy agent przygotowujący dane produktowe i synchronizujący je z jedną tabelą Airtable w trybie kontrolowanym.
 
-## Dostępne skille
+## Tryby
 
-- `skills/airtable-overview/SKILL.md` — stosuj przed analizą modelu danych Airtable;
-- `skills/airtable-filters/SKILL.md` — stosuj przed budowaniem filtrów Airtable MCP.
+### READ_ONLY
 
-Skille są oficjalnymi, niezmodyfikowanymi kopiami z `Airtable/skills`, przypiętymi
-w `skills/UPSTREAM.json`. W wersji 0.1.0 są przygotowaniem do późniejszego etapu
-Airtable i nie uruchamiają bezpośredniego importu ani zapisu rekordów.
+- diagnoza środowiska;
+- odkrywanie narzędzi Airtable MCP;
+- odczyt bazy, tabeli, schematu i rekordów;
+- brak zapisu.
 
-## Procedura obowiązkowa
-1. Oblicz SHA-256 pliku wejściowego.
-2. Odczytaj rzeczywistą listę arkuszy i strukturę `EXPORT`.
-3. Wykonaj wszystkie reguły audytu.
-4. Utwórz raport i plan.
-5. Przerwij, gdy istnieje problem `BLOCKER`.
-6. Utwórz nowy plik wyjściowy.
-7. Zachowaj arkusze wejściowe bez zmian.
-8. Utwórz `EXPORT_GOTOWY`, `AUDYT_AGENTA`, `DO_WERYFIKACJI` i `PLAN_ZMIAN`.
-9. Zweryfikuj liczbę rekordów, kolejność ID i SKU oraz obecność arkuszy wynikowych.
-10. Zgłoś wykonane i niewykonane testy.
+### PREVIEW
+
+- przygotowanie XLSX;
+- porównanie XLSX z Airtable;
+- klasyfikacja `create`, `update`, `unchanged`, `conflict`, `blocked`;
+- zapis planu z SHA-256;
+- brak zmian w Airtable.
+
+### APPROVED_WRITE
+
+- wymaga niezmodyfikowanego planu;
+- wymaga oddzielnego zatwierdzenia;
+- dozwolone wyłącznie `create_records_for_table` i `update_records_for_table`;
+- partie maksymalnie 10 rekordów;
+- wymagany raport wykonania.
 
 ## Zakazy
-- brak automatycznego usuwania lub scalania;
-- brak zgadywania SKU, EAN, cen, kategorii, wag, stanów i aktywności;
-- brak nadpisywania wejścia;
-- brak publikowania rzeczywistych danych w GitHub;
-- brak bezpośredniego importu do Airtable w wersji 0.1.0.
 
-## Definicja sukcesu
-`verification.passed == true` oraz niezmieniony SHA-256 pliku wejściowego.
+- brak automatycznego usuwania;
+- brak zmian schematu;
+- brak zgadywania identyfikatorów Airtable;
+- brak scalania konfliktów;
+- brak zapisu przy brakujących lub zduplikowanych kluczach;
+- brak publikowania tokenów i danych w repo.
+
+## Klucz synchronizacji
+
+Klucz jest określany w lokalnym kontrakcie Airtable. Preferowany jest stabilny SKU albo zewnętrzny UUID. Nazwa produktu nie jest poprawnym kluczem.
+
+## Sukces
+
+Przygotowanie XLSX kończy się `verification.passed=true`. Synchronizacja kończy się raportem zgodnym z zatwierdzonym planem.

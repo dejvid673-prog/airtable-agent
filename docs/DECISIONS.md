@@ -1,19 +1,25 @@
 # Decyzje architektoniczne
 
-## ADR-001 — Jeden agent, jedna praca
-Agent nie zarządza Airtable ani PrestaShop. Przygotowuje wyłącznie XLSX.
+## ADR-001 — Oficjalny backend Airtable
 
-## ADR-002 — Źródło pozostaje bez zmian
-Wynik powstaje w nowym pliku i nowym arkuszu `EXPORT_GOTOWY`.
+Używamy `@airtable/mcp-cli`, a nie własnego klienta OAuth/API. CLI dynamicznie odkrywa aktualne narzędzia MCP i jest przeznaczone do skryptów oraz agentów.
 
-## ADR-003 — Brak automatycznych decyzji biznesowych
-Duplikaty nazw/EAN, zerowe ceny, podejrzane warianty i konflikty stanów są
-raportowane, ale nie naprawiane bez potwierdzonej reguły.
+## ADR-002 — Lokalny backend XLSX
 
-## ADR-004 — Dane produkcyjne poza repozytorium
-Repo publiczne przechowuje kod, kontrakty i syntetyczne testy, ale nie pliki
-produktowe ani raporty wykonania.
+Używamy `openpyxl`, aby agent działał lokalnie na Windowsie bez prywatnego runtime `artifact_tool`.
 
-## ADR-005 — Runtime 0.1.0
-Integracja XLSX używa `artifact_tool` dostępnego w środowisku narzędzi arkuszy
-OpenAI. Rdzeń reguł pozostaje niezależny i testowalny bez tego runtime.
+## ADR-003 — Preview przed zapisem
+
+Każda synchronizacja najpierw generuje plan. Zapis wymaga oddzielnego pliku zatwierdzenia i zgodnego SHA-256.
+
+## ADR-004 — Brak destructive operations
+
+Agent nie usuwa rekordów, tabel, pól ani baz. Nie zmienia schematu.
+
+## ADR-005 — Pole ID zamiast nazwy
+
+Zapisy Airtable używają `fld...`, a aktualizacje `rec...`. Stabilny klucz produktu jest jawnie wskazany w lokalnym kontrakcie.
+
+## ADR-006 — Dane poza GitHub
+
+Tokeny, mapowania lokalne, XLSX, plany, zatwierdzenia i raporty pozostają poza publicznym repozytorium.

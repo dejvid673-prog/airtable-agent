@@ -1,66 +1,117 @@
-# Airtable Product Workbook Preparation Agent
+# Airtable Product Workbook Agent
 
-Jednozadaniowy agent przygotowujący produktowy skoroszyt XLSX do kontrolowanej
-pracy lub importu w Airtable.
+Agent przygotowuje produktowy skoroszyt XLSX, generuje kontrolowany plan synchronizacji i — dopiero po ręcznym zatwierdzeniu — tworzy lub aktualizuje rekordy w Airtable przez oficjalny `@airtable/mcp-cli`.
 
-## Zakres wersji 0.1.0
-
-Agent wykonuje zamknięty workflow:
+## Zakres wersji 0.2.0
 
 ```text
-analyze → plan → apply → verify
+prepare XLSX → verify → Airtable preview → approval → Airtable apply
 ```
 
-- **analyze** — rozpoznaje strukturę i wykrywa problemy;
-- **plan** — oddziela bezpieczne operacje od decyzji człowieka;
-- **apply** — zapisuje nowy plik, nigdy nie nadpisuje wejścia;
-- **verify** — porównuje wejście z wynikiem i potwierdza brak utraty rekordów.
+### Przygotowanie XLSX
 
-Agent nie łączy się jeszcze bezpośrednio z Airtable i nie uruchamia się
-automatycznie.
+Agent:
 
-## Oficjalne skille Airtable
+- ujednolica nazwy bez zgadywania treści produktu;
+- rozdziela długość, pojemność, ilość, wagę produktu, wagę wysyłkową, wytrzymałość i ciężar elementu;
+- mapuje istniejące podkategorie do dokładnie trzech kategorii głównych:
+  - `Wędkarstwo`,
+  - `Stawy i oczka wodne`,
+  - `Ryby`;
+- nie zmienia cen, stanów, aktywności ani EAN;
+- nigdy nie nadpisuje wejścia;
+- zachowuje oryginalne arkusze i dodaje arkusze wynikowe.
 
-Repozytorium zawiera dwie niezmodyfikowane umiejętności z oficjalnego repozytorium
-`Airtable/skills`:
+### Airtable
 
-- `skills/airtable-overview/SKILL.md` — model danych Airtable;
-- `skills/airtable-filters/SKILL.md` — filtry rekordów dla Airtable MCP.
+Agent używa oficjalnego CLI Airtable, które dynamicznie odkrywa aktualne narzędzia MCP. Tryb zapisu jest zabezpieczony planem SHA-256 oraz oddzielnym plikiem zatwierdzenia.
 
-Oba skille mają wersję `1.0.0` i są przypięte do commita
-`295ab93b7d765912ee1a0dc7f1abb0ecaf73f138`. Szczegóły pochodzenia i blob SHA
-znajdują się w `skills/UPSTREAM.json`, a licencja w `THIRD_PARTY_NOTICES.md`.
+Agent nie usuwa rekordów i nie zmienia schematu bazy.
 
-## Wynik
+## Instalacja Windows
 
-W pliku wynikowym tworzone są arkusze:
-
-- `EXPORT_GOTOWY` — przygotowana kopia danych źródłowych;
-- `AUDYT_AGENTA` — podsumowanie kontroli;
-- `DO_WERYFIKACJI` — wszystkie przypadki wymagające decyzji człowieka;
-- `PLAN_ZMIAN` — wykonane i zablokowane operacje.
-
-Arkusze wejściowe pozostają bez zmian.
-
-## Uruchomienie w środowisku OpenAI Artifact Runtime
+W PowerShell, w katalogu repozytorium:
 
 ```powershell
-python -m airtable_workbook_agent run `
-  --input "data/input/produkty.xlsx" `
-  --output "data/output/produkty_przygotowane.xlsx" `
-  --run-dir "runs/run-001"
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\bootstrap.ps1
 ```
 
-Runtime wymaga dostępu do pakietu `artifact_tool`, dostarczanego przez środowisko
-narzędzi arkuszy OpenAI. Testy logiki biznesowej nie wymagają tego pakietu.
+Skrypt tworzy `.venv`, instaluje pakiet Python oraz oficjalny `@airtable/mcp-cli`.
+
+Następnie skonfiguruj Airtable:
+
+```powershell
+.\scripts\setup_airtable.ps1
+```
+
+## Przygotowanie pliku
+
+```powershell
+.\scripts\prepare_workbook.ps1 `
+  -InputFile "C:\Dane\produkty.xlsx"
+```
+
+Wynik trafia do `data/output`, a raporty do `runs`.
+
+## Podgląd synchronizacji Airtable
+
+Najpierw skopiuj i uzupełnij:
+
+```text
+contracts/airtable_mapping.example.json
+```
+
+Następnie:
+
+```powershell
+.\scripts\preview_airtable.ps1 `
+  -InputFile "data\output\produkty_przygotowane.xlsx" `
+  -MappingFile "contracts\airtable_mapping.local.json"
+```
+
+Powstaną:
+
+- plan synchronizacji JSON;
+- szablon zatwierdzenia z `approved=false`.
+
+## Zatwierdzony zapis
+
+Po ręcznym sprawdzeniu planu ustaw w pliku zatwierdzenia:
+
+```json
+{
+  "approved": true,
+  "approved_by": "imię użytkownika"
+}
+```
+
+Następnie:
+
+```powershell
+.\scripts\apply_airtable.ps1 `
+  -PlanFile "runs\airtable-plan.json" `
+  -ApprovalFile "approvals\airtable-approval.json"
+```
+
+## Diagnostyka
+
+```powershell
+.\.venv\Scripts\python.exe -m airtable_workbook_agent doctor --require-write
+```
 
 ## Testy
 
 ```powershell
-python -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-## Bezpieczeństwo danych
+## Oficjalne skille
 
-Repozytorium jest publiczne. `.gitignore` blokuje rzeczywiste pliki XLSX,
-katalogi wejściowe, wyjściowe, raporty uruchomień i zatwierdzenia.
+Repo zawiera niezmodyfikowane, wersjonowane skille Airtable:
+
+- `airtable-overview`;
+- `airtable-filters`;
+- `airtable-cli`.
+
+Ich pochodzenie i blob SHA znajdują się w `skills/UPSTREAM.json`.
