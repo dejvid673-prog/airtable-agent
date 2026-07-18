@@ -1,0 +1,20 @@
+{
+  "contract_version": "0.2.0",
+  "base_id": "appXXXXXXXXXXXXXX",
+  "table_id": "tblXXXXXXXXXXXXXX",
+  "source_sheet": "EXPORT_GOTOWY",
+  "page_size": 100,
+  "key": {
+    "excel_column": "SKU",
+    "airtable_field_id": "fldSKUXXXXXXXXXX"
+  },
+  "fields": [
+    {"excel_column": "Nazwa produktu", "airtable_field_id": "fldNameXXXXXXXXX", "mode": "write"},
+    {"excel_column": "Kategoria główna", "airtable_field_id": "fldMainCatXXXXXX", "mode": "write"},
+    {"excel_column": "Podkategoria", "airtable_field_id": "fldSubCatXXXXXXX", "mode": "write"},
+    {"excel_column": "Waga produktu kg", "airtable_field_id": "fldWeightXXXXXXX", "mode": "write"},
+    {"excel_column": "Cena netto", "airtable_field_id": "fldPriceXXXXXXXX", "mode": "write"},
+    {"excel_column": "Stan", "airtable_field_id": "fldStockXXXXXXXX", "mode": "write"},
+    {"excel_column": "Aktywny", "airtable_field_id": "fldActiveXXXXXXX", "mode": "write"}
+  ]
+}

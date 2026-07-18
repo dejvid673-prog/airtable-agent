@@ -1,54 +1,113 @@
-# Airtable Product Workbook Preparation Agent
+# Airtable Product Workbook Agent
 
-Jednozadaniowy agent przygotowujący produktowy skoroszyt XLSX do kontrolowanej
-pracy lub importu w Airtable.
+Agent przygotowuje produktowy skoroszyt XLSX, generuje kontrolowany plan synchronizacji i — dopiero po ręcznym zatwierdzeniu — tworzy lub aktualizuje rekordy w Airtable.
 
-## Zakres wersji 0.1.0
-
-Agent wykonuje zamknięty workflow:
+## Workflow
 
 ```text
-analyze → plan → apply → verify
+prepare XLSX → verify → Airtable preview → approval → Airtable apply
 ```
 
-- **analyze** — rozpoznaje strukturę i wykrywa problemy;
-- **plan** — oddziela bezpieczne operacje od decyzji człowieka;
-- **apply** — zapisuje nowy plik, nigdy nie nadpisuje wejścia;
-- **verify** — porównuje wejście z wynikiem i potwierdza brak utraty rekordów.
+## Przygotowanie XLSX
 
-Agent nie łączy się jeszcze bezpośrednio z Airtable i nie uruchamia się
-automatycznie.
+Agent:
 
-## Wynik
+- ujednolica nazwy bez zgadywania treści produktu;
+- rozdziela długość, pojemność, ilość, wagę produktu, wagę wysyłkową, wytrzymałość i ciężar elementu;
+- mapuje istniejące podkategorie do dokładnie trzech kategorii głównych: `Wędkarstwo`, `Stawy i oczka wodne`, `Ryby`;
+- nie zmienia cen, stanów, aktywności ani EAN;
+- nigdy nie nadpisuje wejścia;
+- zachowuje oryginalne arkusze i dodaje arkusze wynikowe.
 
-W pliku wynikowym tworzone są arkusze:
+## Airtable
 
-- `EXPORT_GOTOWY` — przygotowana kopia danych źródłowych;
-- `AUDYT_AGENTA` — podsumowanie kontroli;
-- `DO_WERYFIKACJI` — wszystkie przypadki wymagające decyzji człowieka;
-- `PLAN_ZMIAN` — wykonane i zablokowane operacje.
+Domyślnym transportem jest oficjalny Airtable Web API (`--backend rest`). Opcjonalnie można użyć oficjalnego `@airtable/mcp-cli` (`--backend mcp`). Oba transporty korzystają z tego samego mechanizmu bezpieczeństwa:
 
-Arkusze wejściowe pozostają bez zmian.
+- preview bez zapisu;
+- plan zabezpieczony SHA-256;
+- oddzielny plik zatwierdzenia;
+- limity create/update;
+- partie maksymalnie 10 rekordów;
+- brak delete;
+- brak zmian schematu.
 
-## Uruchomienie w środowisku OpenAI Artifact Runtime
+Token REST jest przechowywany lokalnie jako zaszyfrowany plik Windows DPAPI w `.secrets/` i nie trafia do Git.
+
+## Instalacja Windows
+
+W PowerShell, w katalogu repozytorium:
 
 ```powershell
-python -m airtable_workbook_agent run `
-  --input "data/input/produkty.xlsx" `
-  --output "data/output/produkty_przygotowane.xlsx" `
-  --run-dir "runs/run-001"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\bootstrap.ps1"
 ```
 
-Runtime wymaga dostępu do pakietu `artifact_tool`, dostarczanego przez środowisko
-narzędzi arkuszy OpenAI. Testy logiki biznesowej nie wymagają tego pakietu.
+Skrypt tworzy `.venv`, instaluje pakiet Python i uruchamia testy. Node.js nie jest wymagany dla domyślnego backendu REST.
+
+Opcjonalny MCP CLI:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\bootstrap.ps1" -InstallAirtableCli
+```
+
+## Konfiguracja Airtable REST
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\setup_airtable.ps1"
+```
+
+Wklej pełny PAT. Pole wejściowe pozostaje niewidoczne. Skrypt szyfruje token przez Windows DPAPI i wykonuje kontrolę read-only przez Airtable Web API.
+
+## Przygotowanie pliku
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\prepare_workbook.ps1" -InputFile "C:\Dane\produkty.xlsx"
+```
+
+Wynik trafia do `data/output`, a raporty do `runs`.
+
+## Podgląd synchronizacji Airtable
+
+Skopiuj i uzupełnij `contracts/airtable_mapping.example.json` jako `contracts/airtable_mapping.local.json`, wpisując identyfikatory `app...`, `tbl...` i `fld...`.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\preview_airtable.ps1" -InputFile "data\output\produkty_przygotowane.xlsx" -MappingFile "contracts\airtable_mapping.local.json"
+```
+
+Powstaną plan synchronizacji JSON i szablon zatwierdzenia z `approved=false`.
+
+## Zatwierdzony zapis
+
+Po ręcznym sprawdzeniu planu ustaw w pliku zatwierdzenia:
+
+```json
+{
+  "approved": true,
+  "approved_by": "imię użytkownika"
+}
+```
+
+Następnie:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\scripts\apply_airtable.ps1" -PlanFile "runs\airtable-plan.json" -ApprovalFile "approvals\airtable-approval.json"
+```
+
+## Diagnostyka REST
+
+Skrypty użytkownika automatycznie odszyfrowują token tylko na czas pojedynczego procesu. Ręczna diagnostyka wymaga ustawienia `AIRTABLE_TOKEN` w bieżącym procesie albo użycia `setup_airtable.ps1`.
 
 ## Testy
 
 ```powershell
-python -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-## Bezpieczeństwo danych
+## Oficjalne skille
 
-Repozytorium jest publiczne. `.gitignore` blokuje rzeczywiste pliki XLSX,
-katalogi wejściowe, wyjściowe, raporty uruchomień i zatwierdzenia.
+Repo zawiera niezmodyfikowane, wersjonowane skille Airtable:
+
+- `airtable-overview`;
+- `airtable-filters`;
+- `airtable-cli`.
+
+Ich pochodzenie i blob SHA znajdują się w `skills/UPSTREAM.json`.
