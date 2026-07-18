@@ -52,7 +52,10 @@ if (-not $SkipAirtableCli) {
     if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
         throw "npm was not found. Install Node.js LTS and run this script again."
     }
-    Invoke-NativeCommand -FilePath "npm" -ArgumentList @("install", "-g", "@airtable/mcp-cli")
+    # 0.2.6 produced repeatable `fetch failed` errors on Windows/Node 24 during
+    # MCP tool discovery while direct HTTPS connectivity succeeded. Pin the
+    # last source-synced stable release until the upstream regression is fixed.
+    Invoke-NativeCommand -FilePath "npm" -ArgumentList @("install", "-g", "@airtable/mcp-cli@0.2.5")
 }
 
 if ($InstallCodexPlugin) {
