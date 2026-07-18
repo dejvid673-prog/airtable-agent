@@ -46,6 +46,18 @@ jobs:
               $allErrors | ForEach-Object { Write-Error $_ }
               throw "PowerShell parser validation failed."
           }
-      - name: Run bootstrap without Airtable CLI
+      - name: Run bootstrap installation
         shell: powershell
-        run: .\scripts\bootstrap.ps1 -PythonCommand python -SkipAirtableCli
+        run: .\scripts\bootstrap.ps1 -PythonCommand python -SkipAirtableCli -SkipTests
+      - name: Test vendored Airtable skills
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_vendor_skills -v
+      - name: Test workbook processing
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_xlsx_backend tests.test_product_transform tests.test_rules tests.test_reporting -v
+      - name: Test Airtable integration layer
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_airtable_cli tests.test_airtable_sync -v
+      - name: Test optional artifact integration
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_integration_artifact -v
