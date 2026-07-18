@@ -73,7 +73,10 @@ class AirtableRESTTests(unittest.TestCase):
         second = urlopen.call_args_list[1].args[0]
         self.assertEqual(first.method, "POST")
         self.assertEqual(second.method, "PATCH")
-        self.assertIn(b'"returnFieldsByFieldId": true', first.data)
+        self.assertEqual(json.loads(first.data), {
+            "records": [{"fields": {"fldA": "A"}}],
+            "typecast": False,
+        })
 
 
 if __name__ == "__main__":
