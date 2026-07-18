@@ -10,9 +10,6 @@ $ErrorActionPreference = "Stop"
 
 if ($Backend -eq "rest") {
     & (Join-Path $PSScriptRoot "setup_airtable_rest.ps1")
-    if ($LASTEXITCODE -ne 0) {
-        throw "REST setup failed with exit code $LASTEXITCODE."
-    }
     return
 }
 
