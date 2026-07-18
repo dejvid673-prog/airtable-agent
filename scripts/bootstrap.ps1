@@ -3,7 +3,8 @@
 param(
     [string]$PythonCommand = "py",
     [switch]$SkipAirtableCli,
-    [switch]$InstallCodexPlugin
+    [switch]$InstallCodexPlugin,
+    [switch]$SkipTests
 )
 
 Set-StrictMode -Version Latest
@@ -62,5 +63,8 @@ if ($InstallCodexPlugin) {
     }
 }
 
-Invoke-NativeCommand -FilePath $Python -ArgumentList @("-m", "unittest", "discover", "-s", "tests", "-v")
+if (-not $SkipTests) {
+    Invoke-NativeCommand -FilePath $Python -ArgumentList @("-m", "unittest", "discover", "-s", "tests", "-v")
+}
+
 Write-Host "Installation completed. Next run .\scripts\setup_airtable.ps1"
