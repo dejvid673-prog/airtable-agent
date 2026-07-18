@@ -148,7 +148,6 @@ class AirtableRESTClient:
                 payload={
                     "records": payload.get("records", []),
                     "typecast": False,
-                    "returnFieldsByFieldId": True,
                 },
             )
 
@@ -159,7 +158,6 @@ class AirtableRESTClient:
                 payload={
                     "records": payload.get("records", []),
                     "typecast": False,
-                    "returnFieldsByFieldId": True,
                 },
             )
 
