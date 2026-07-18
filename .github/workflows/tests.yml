@@ -52,12 +52,24 @@ jobs:
       - name: Test vendored Airtable skills
         shell: powershell
         run: .\.venv\Scripts\python.exe -m unittest tests.test_vendor_skills -v
-      - name: Test workbook processing
+      - name: Test XLSX backend
         shell: powershell
-        run: .\.venv\Scripts\python.exe -m unittest tests.test_xlsx_backend tests.test_product_transform tests.test_rules tests.test_reporting -v
-      - name: Test Airtable integration layer
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_xlsx_backend -v
+      - name: Test product transformation
         shell: powershell
-        run: .\.venv\Scripts\python.exe -m unittest tests.test_airtable_cli tests.test_airtable_sync -v
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_product_transform -v
+      - name: Test product rules
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_rules -v
+      - name: Test reporting
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_reporting -v
+      - name: Test Airtable CLI layer
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_airtable_cli -v
+      - name: Test Airtable sync layer
+        shell: powershell
+        run: .\.venv\Scripts\python.exe -m unittest tests.test_airtable_sync -v
       - name: Test optional artifact integration
         shell: powershell
         run: .\.venv\Scripts\python.exe -m unittest tests.test_integration_artifact -v
