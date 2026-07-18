@@ -17,3 +17,35 @@ jobs:
       - run: python -m pip install -e .
       - run: python -m compileall -q src tests
       - run: python -m unittest discover -s tests -v
+
+  windows-powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Parse PowerShell scripts with Windows PowerShell
+        shell: powershell
+        run: |
+          $allErrors = @()
+          Get-ChildItem -Path scripts -Filter *.ps1 | ForEach-Object {
+              $tokens = $null
+              $parseErrors = $null
+              [System.Management.Automation.Language.Parser]::ParseFile(
+                  $_.FullName,
+                  [ref]$tokens,
+                  [ref]$parseErrors
+              ) | Out-Null
+              foreach ($parseError in $parseErrors) {
+                  $allErrors += "$($_.Name): $($parseError.Message)"
+              }
+          }
+          if ($allErrors.Count -gt 0) {
+              $allErrors | ForEach-Object { Write-Error $_ }
+              throw "PowerShell parser validation failed."
+          }
+      - name: Run bootstrap without Airtable CLI
+        shell: powershell
+        run: .\scripts\bootstrap.ps1 -PythonCommand python -SkipAirtableCli
