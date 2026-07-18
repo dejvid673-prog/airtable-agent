@@ -30,19 +30,24 @@ Agent nie usuwa rekordów i nie zmienia schematu bazy.
 
 ## Instalacja Windows
 
-W PowerShell, w katalogu repozytorium:
+W PowerShell, w katalogu repozytorium, uruchom jedno polecenie:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\bootstrap.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 ```
 
-Skrypt tworzy `.venv`, instaluje pakiet Python oraz oficjalny `@airtable/mcp-cli`.
+Instalacja razem z oficjalnym pluginem Airtable dla Codexa:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1 -InstallCodexPlugin
+```
+
+Skrypt tworzy `.venv`, instaluje pakiet Python oraz oficjalny `@airtable/mcp-cli`, a następnie uruchamia testy. Nie wpisuj pytań tekstowych w oknie PowerShell — PowerShell traktuje je jako nazwy poleceń.
 
 Następnie skonfiguruj Airtable:
 
 ```powershell
-.\scripts\setup_airtable.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_airtable.ps1
 ```
 
 ## Przygotowanie pliku
