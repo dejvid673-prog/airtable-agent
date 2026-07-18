@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param(
     [string]$PythonCommand = "py",
+    [switch]$InstallAirtableCli,
     [switch]$SkipAirtableCli,
     [switch]$InstallCodexPlugin,
     [switch]$SkipTests
@@ -16,7 +17,6 @@ function Invoke-NativeCommand {
         [Parameter(Mandatory = $true)][string]$FilePath,
         [Parameter(Mandatory = $true)][string[]]$ArgumentList
     )
-
     & $FilePath @ArgumentList
     if ($LASTEXITCODE -ne 0) {
         throw "Command failed with exit code $LASTEXITCODE`: $FilePath $($ArgumentList -join ' ')"
@@ -48,13 +48,11 @@ if (-not (Test-Path $Python)) {
 Invoke-NativeCommand -FilePath $Python -ArgumentList @("-m", "pip", "install", "--upgrade", "pip")
 Invoke-NativeCommand -FilePath $Python -ArgumentList @("-m", "pip", "install", "-e", ".")
 
-if (-not $SkipAirtableCli) {
+# REST is the default backend and does not require Node/npm. MCP CLI is optional.
+if ($InstallAirtableCli -and -not $SkipAirtableCli) {
     if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-        throw "npm was not found. Install Node.js LTS and run this script again."
+        throw "npm was not found. Install Node.js LTS or omit -InstallAirtableCli."
     }
-    # 0.2.6 produced repeatable `fetch failed` errors on Windows/Node 24 during
-    # MCP tool discovery while direct HTTPS connectivity succeeded. Pin the
-    # last source-synced stable release until the upstream regression is fixed.
     Invoke-NativeCommand -FilePath "npm" -ArgumentList @("install", "-g", "@airtable/mcp-cli@0.2.5")
 }
 
