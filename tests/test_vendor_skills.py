@@ -8,7 +8,7 @@ ROOT = Path(__file__).parents[1]
 
 
 def git_blob_sha(path: Path) -> str:
-    content = path.read_bytes()
+    content = path.read_bytes().replace(b"\r\n", b"\n")
     payload = f"blob {len(content)}\0".encode("utf-8") + content
     return hashlib.sha1(payload).hexdigest()
 
