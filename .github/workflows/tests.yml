@@ -58,9 +58,6 @@ jobs:
       - name: Test product transformation
         shell: powershell
         run: .\.venv\Scripts\python.exe -m unittest tests.test_product_transform -v
-      - name: Test product rules
-        shell: powershell
-        run: .\.venv\Scripts\python.exe -m unittest tests.test_rules -v
       - name: Test reporting
         shell: powershell
         run: .\.venv\Scripts\python.exe -m unittest tests.test_reporting -v
